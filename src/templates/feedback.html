@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Feedback</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="logo"><div class="cube"></div>DL Cattle Classifier</div>
+  <div>
+    <a href="/index">Home</a>
+    <a href="/about">About</a>
+    <a href="/feedback" class="active">Feedback</a>
+    <a href="/logout">Logout</a>
+  </div>
+</nav>
+
+<div class="content feedback-section">
+  <h1>Model Feedback</h1>
+
+  {% if submitted %}
+    <div class="alert success">✅ Thank you for your feedback! It helps us improve.</div>
+  {% endif %}
+
+  <form method="post" class="feedback-form">
+    <div class="form-group">
+      <label>Image filename or URL</label>
+      <input type="text" name="image" placeholder="Enter image filename or URL" required>
+    </div>
+
+    <div class="form-group">
+      <label>Predicted Label</label>
+      <input type="text" name="predicted" placeholder="Model predicted label" required>
+    </div>
+
+    <div class="form-group">
+      <label>Was it correct?</label>
+      <select name="correct" required>
+        <option value="">--Select--</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Actual Label (if incorrect)</label>
+      <input type="text" name="user_label" placeholder="Enter the correct label">
+    </div>
+
+    <div class="form-group">
+      <label>Additional Notes</label>
+      <textarea name="notes" rows="4" placeholder="Any additional comments or observations..."></textarea>
+    </div>
+
+    <button type="submit" class="btn-primary">Submit Feedback</button>
+    <a href="/index" class="btn-secondary">Back to Home</a>
+  </form>
+</div>
+
+<footer>
+  <p>© 2025 Cattle Classifier. All rights reserved.</p>
+</footer>
+</body>
+</html>

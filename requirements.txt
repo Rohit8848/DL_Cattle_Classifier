@@ -1,0 +1,9 @@
+flask==2.3.3
+torch==2.2.0
+torchvision==0.17.0
+numpy==1.26.4
+pillow==10.1.0
+sqlalchemy==2.0.44
+alembic==1.13.1
+requests==2.32.0
+tqdm==4.66.1

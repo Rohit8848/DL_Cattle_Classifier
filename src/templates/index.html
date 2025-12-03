@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BreedScanner – DL Cattle & Buffalo Classifier</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<header class="navbar">
+  <div class="logo">
+    <div class="cube"></div>
+    <span>DL Cattle Classifier</span>
+  </div>
+  <nav>
+    <a href="/index">Home</a>
+    <a href="/about">About</a>
+    <a href="/feedback">Feedback</a>
+    <a href="/logout">Logout</a>
+  </nav>
+</header>
+
+<main class="content">
+  <section class="upload-section">
+    <h1>Upload an Image or Paste Image URL</h1>
+
+    <form id="frm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="file-label">
+          <input type="file" name="image" accept="image/*">
+          Choose File
+        </label>
+      </div>
+
+      <div class="form-group">
+        <input type="url" name="image_url" placeholder="or paste an image URL (https://...)">
+      </div>
+
+      <button type="submit" class="btn-primary">Analyze Breed</button>
+    </form>
+  </section>
+
+  <section id="result" class="result-card hidden"></section>
+</main>
+
+<footer>
+  <p>© 2025 DL Cattle Classifier | Powered by Flask & PyTorch (ResNet-50)</p>
+</footer>
+
+<script>
+document.getElementById('frm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const fd = new FormData(e.target);
+  const result = document.getElementById('result');
+
+  result.classList.remove('hidden');
+  result.innerHTML = "<p>🔍 Running deep learning model…</p>";
+
+  const res = await fetch("/predict", { method: "POST", body: fd });
+  const j = await res.json();
+
+  if (res.ok) {
+    result.innerHTML = `
+      <h2>Analysis Results</h2>
+      <div class="analysis-container">
+        <div class="image-box">
+          <img src="${j.image_path || '#'}" alt="Uploaded Image">
+        </div>
+        <div class="details-box">
+          <div class="status-tag">🟢 Animal Detected</div>
+          <h3>Deep Learning Prediction</h3>
+          <p><b>Breed:</b> ${j.predicted}</p>
+          <p><b>Confidence:</b></p>
+          <div class="progress-bar">
+            <div class="progress" style="width:${(j.probability * 100).toFixed(1)}%"></div>
+          </div>
+          <p class="confidence-text">${(j.probability * 100).toFixed(1)}%</p>
+          <p class="remark">Prediction generated using ResNet-50 feature extraction and classification.</p>
+        </div>
+      </div>
+    `;
+  } else {
+    result.innerHTML = `<p class="error">❌ Error: ${j.error || "Something went wrong."}</p>`;
+  }
+});
+</script>
+
+</body>
+</html>

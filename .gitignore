@@ -1,0 +1,2 @@
+venv/
+models/resnet50_checkpoint.pth

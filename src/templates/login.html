@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Login - DL Project</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<nav class="navbar">
+  <div class="logo"><div class="cube"></div><span>DL Cattle Classifier</span></div>
+  <div>
+    {% if session.get('user_email') %}
+      <a href="/index">Home</a>
+      <a href="/about">About</a>
+      <a href="/feedback">Feedback</a>
+      <a href="/logout">Logout</a>
+    {% else %}
+      <a href="/signup">Signup</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="content auth-box">
+  <h1>Login</h1>
+
+  {% if error %}
+    <div class="alert">{{ error }}</div>
+  {% endif %}
+
+  <form method="post">
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" name="email" placeholder="Enter your email" required>
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" name="password" placeholder="Enter password" required>
+    </div>
+
+    <button class="btn-primary" type="submit">Login</button>
+  </form>
+
+  <p class="switch-link">
+    Don't have an account? <a href="/signup">Create one</a>
+  </p>
+</div>
+
+</body>
+</html>
