@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>About - DL Project</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="logo"><div class="cube"></div><span>DL Cattle Classifier</span></div>
+  <div>
+    <a href="/index">Home</a>
+    <a href="/about" class="active">About</a>
+    <a href="/feedback">Feedback</a>
+    <a href="/logout">Logout</a>
+  </div>
+</nav>
+
+<div class="content">
+  <section class="about-section">
+    <h1>About the Deep Learning Project</h1>
+    <p class="info-text">
+      This project leverages <strong>Deep Learning</strong> techniques using <strong>PyTorch</strong> to classify images with high accuracy.
+      The system is powered by the <strong>ResNet-50</strong> architecture.
+    </p>
+
+    <p class="info-text">
+      Supports both <strong>image uploads</strong> and <strong>URL-based predictions</strong>.
+    </p>
+
+    <div class="details-box">
+      <h3>Project Highlights:</h3>
+      <ul>
+        <li>Model: ResNet-50 (pretrained on ImageNet)</li>
+        <li>Framework: PyTorch</li>
+        <li>Deployment: Flask-based Web Interface</li>
+        <li>Checkpoint Path: <code>models/resnet50_checkpoint.pth</code></li>
+        <li>Outputs: Predicted class, confidence, and analysis</li>
+      </ul>
+    </div>
+
+    <a href="/index" class="btn-secondary">← Back to Home</a>
+  </section>
+</div>
+
+<footer>
+  <p>© 2025 Deep Learning Image Classifier | Built with Flask & PyTorch</p>
+</footer>
+
+</body>
+</html>
