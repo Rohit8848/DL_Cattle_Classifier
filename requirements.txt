@@ -7,3 +7,7 @@ sqlalchemy==2.0.44
 alembic==1.13.1
 requests==2.32.0
 tqdm==4.66.1
+
+# --- Object Detection ---
+ultralytics==8.2.0
+opencv-python==4.9.0.80

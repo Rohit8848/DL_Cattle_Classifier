@@ -1,1 +1,11 @@
-venv/
+__pycache__/
+*.pyc
+dataset/
+uploads_dl/
+models/*.pth
+models/*.png
+models/*.json
+models/*.csv
+.vscode/
+.sfdx/
+*.db

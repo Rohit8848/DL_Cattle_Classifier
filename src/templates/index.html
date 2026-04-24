@@ -4,88 +4,863 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BreedScanner – DL Cattle & Buffalo Classifier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --soil:       #fdf8f0;
+      --amber:      #b8720a;
+      --gold:       #c8860e;
+      --sage:       #3a6b30;
+      --leaf:       #4a7c45;
+      --cream:      #2a1f0e;
+      --parchment:  #4a3820;
+      --dust:       #7a6248;
+      --mist:       rgba(184,114,10,0.07);
+      --radius:     12px;
+      --transition: 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--soil);
+      color: var(--cream);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 20% -10%, rgba(200,134,14,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 110%, rgba(74,124,69,0.08) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 68px;
+      background: rgba(253,248,240,0.88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(184,114,10,0.15);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      text-decoration: none;
+      color: var(--cream);
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .logo-mark svg { width: 30px; height: 30px; filter: drop-shadow(0 0 6px rgba(200,134,14,0.5)); }
+    .logo em { font-style: italic; color: var(--gold); }
+    nav { display: flex; gap: 6px; }
+
+    nav a {
+      color: var(--dust);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 400;
+      padding: 7px 16px;
+      border-radius: 20px;
+      transition: var(--transition);
+      letter-spacing: 0.02em;
+    }
+
+    nav a:hover, nav a.active { color: var(--cream); background: var(--mist); }
+    nav a.active { color: var(--amber); background: rgba(184,114,10,0.10); }
+    nav a:last-child { color: #c04040; }
+    nav a:last-child:hover { background: rgba(220,80,80,0.08); color: #a03030; }
+
+    /* ── Main ── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 64px 24px 100px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      margin-bottom: 52px;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(200,134,14,0.12);
+      border: 1px solid rgba(200,134,14,0.25);
+      color: var(--gold);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 22px;
+    }
+
+    .hero-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--leaf);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--leaf);
+      animation: pulse 2s infinite;
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      color: var(--cream);
+      margin-bottom: 14px;
+    }
+
+    .hero h1 span { font-style: italic; color: var(--gold); }
+    .hero p { font-size: 1rem; color: var(--dust); font-weight: 300; letter-spacing: 0.01em; }
+
+    /* ── Upload card ── */
+    .upload-card {
+      background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(253,248,240,0.98));
+      border: 1px solid rgba(184,114,10,0.18);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.8),
+        0 24px 64px rgba(184,114,10,0.10),
+        inset 0 1px 0 rgba(255,255,255,1);
+      animation: fadeUp 0.7s 0.15s ease both;
+    }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      position: relative;
+      border: 1.5px dashed rgba(184,114,10,0.4);
+      border-radius: var(--radius);
+      padding: 28px 20px;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+      overflow: hidden;
+      background: rgba(253,248,240,0.6);
+      margin-bottom: 14px;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--amber);
+      background: rgba(184,114,10,0.05);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .drop-icon {
+      width: 36px; height: 36px;
+      margin: 0 auto 10px;
+      background: rgba(184,114,10,0.10);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .drop-icon svg { width: 18px; height: 18px; stroke: var(--amber); }
+    .drop-zone p { font-size: 0.82rem; color: var(--dust); }
+    .drop-zone p strong { color: var(--amber); font-weight: 500; }
+
+    #file-label {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--leaf);
+      min-height: 16px;
+    }
+
+    /* ── OR divider ── */
+    .divider-or {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--dust);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+    }
+
+    .divider-or::before,
+    .divider-or::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(200,134,14,0.2);
+    }
+
+    /* ════════════════════════════════════════════
+       URL SECTION — label + plain <input> only.
+       Icon is a CSS background-image on the input.
+       No wrapper divs, no nested elements at all.
+    ════════════════════════════════════════════ */
+    .url-block { margin-bottom: 16px; }
+
+    .url-block-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--dust);
+      margin-bottom: 7px;
+    }
+
+    .url-input {
+      display: block;
+      width: 100%;
+      background-color: rgba(253,248,240,0.7);
+      border: 1.5px solid rgba(184,114,10,0.22);
+      border-radius: var(--radius);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      padding: 12px 14px 12px 40px;
+      outline: none;
+      transition: var(--transition);
+      /* Link icon as inline SVG background — no extra HTML needed */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237a6248' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 13px center;
+      background-size: 14px 14px;
+    }
+
+    .url-input::placeholder { color: rgba(122,98,72,0.4); }
+
+    .url-input:focus {
+      border-color: var(--amber);
+      background-color: rgba(184,114,10,0.03);
+      box-shadow: 0 0 0 3px rgba(184,114,10,0.09);
+      /* Amber tinted icon on focus */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23b8720a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 13px center;
+      background-size: 14px 14px;
+    }
+
+    /* ════════════════════════════════════════════
+       RESET ROW — right-aligned pill.
+       Placed OUTSIDE <form> in the HTML so it
+       is never a child of any other button.
+    ════════════════════════════════════════════ */
+    .reset-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 20px;
+    }
+
+    .reset-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: transparent;
+      border: 1.5px solid rgba(184,114,10,0.22);
+      border-radius: 20px;
+      padding: 7px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--dust);
+      cursor: pointer;
+      transition: var(--transition);
+      letter-spacing: 0.02em;
+    }
+
+    .reset-btn svg {
+      width: 13px; height: 13px;
+      stroke: var(--dust);
+      stroke-width: 2;
+      transition: transform 0.55s cubic-bezier(0.4,0,0.2,1), stroke var(--transition);
+      flex-shrink: 0;
+    }
+
+    .reset-btn:hover { border-color: var(--amber); color: var(--amber); background: rgba(184,114,10,0.06); }
+    .reset-btn:hover svg { stroke: var(--amber); transform: rotate(210deg); }
+    .reset-btn:active { transform: scale(0.96); }
+    .reset-btn.spinning svg { transform: rotate(360deg); }
+
+    /* ── Analyze button ── */
+    .analyze-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--amber), #a06c08);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(200,134,14,0.3);
+    }
+
+    .analyze-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .analyze-btn:hover:not(:disabled)::before { opacity: 1; }
+    .analyze-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(200,134,14,0.45); }
+    .analyze-btn:active:not(:disabled) { transform: translateY(0); }
+    .analyze-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-inner { display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+    .spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .analyze-btn.loading .spinner { display: block; }
+    .analyze-btn.loading .btn-text { opacity: 0.8; }
+
+    /* ── Analyzing dots ── */
+    .analyzing-state { text-align: center; padding: 32px; display: none; }
+    .analyzing-state.show { display: block; }
+    .analyzing-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+    .analyzing-dots span {
+      width: 8px; height: 8px;
+      background: var(--amber);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .analyzing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .analyzing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    /* ── Results ── */
+    #result { margin-top: 36px; }
+    .result-panel { margin-top: 40px; animation: fadeUp 0.55s ease both; }
+
+    .result-shell {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 0;
+      background: #fff;
+      border: 1px solid rgba(184,114,10,0.16);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(184,114,10,0.10);
+    }
+
+    .result-img-col {
+      position: relative;
+      background: #f0e8d8;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .result-img-col img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      background: #f5ede0;
+      min-height: 320px;
+    }
+
+    .result-img-badge {
+      position: absolute;
+      top: 14px; left: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(253,248,240,0.93);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(184,114,10,0.2);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: var(--amber);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .result-img-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--leaf);
+      border-radius: 50%;
+      box-shadow: 0 0 5px var(--leaf);
+      flex-shrink: 0;
+    }
+
+    .result-preds-col {
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid rgba(184,114,10,0.10);
+      overflow: hidden;
+    }
+
+    .preds-header { padding: 20px 24px 0; border-bottom: 1px solid rgba(184,114,10,0.10); }
+
+    .preds-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--cream);
+      margin-bottom: 14px;
+    }
+
+    .pred-stack { flex: 1; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+
+    .pred-card {
+      background: linear-gradient(135deg, #fdf8f0, #faf3e8);
+      border: 1px solid rgba(184,114,10,0.12);
+      border-radius: 14px;
+      padding: 14px 16px;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pred-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 3px 0 0 3px;
+    }
+
+    .pred-card.rank-1::before { background: linear-gradient(to bottom, var(--gold), var(--amber)); }
+    .pred-card.rank-2::before { background: linear-gradient(to bottom, #8a8a8a, #b0b0b0); }
+    .pred-card.rank-3::before { background: linear-gradient(to bottom, #a07040, #c89060); }
+
+    .pred-card:hover {
+      border-color: rgba(184,114,10,0.28);
+      box-shadow: 0 6px 20px rgba(184,114,10,0.10);
+      transform: translateX(2px);
+    }
+
+    .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .card-left { display: flex; align-items: center; gap: 10px; }
+
+    .rank-badge {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .rank-1 .rank-badge { background: linear-gradient(135deg,#e8a82a,#b8720a); color:#fff; }
+    .rank-2 .rank-badge { background: #e0e0e0; color: #666; }
+    .rank-3 .rank-badge { background: #dfc090; color: #7a5020; }
+
+    .card-breed { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--cream); }
+    .card-conf-pct { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--amber); }
+
+    .card-bar-track { height: 5px; background: rgba(184,114,10,0.10); border-radius: 3px; overflow: hidden; margin-bottom: 12px; }
+
+    .card-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      width: 0;
+      transition: width 1.1s cubic-bezier(0.4,0,0.2,1) 0.2s;
+    }
+
+    .rank-1 .card-bar-fill { background: linear-gradient(90deg, var(--sage), var(--amber)); }
+    .rank-2 .card-bar-fill { background: linear-gradient(90deg, #888, #bbb); }
+    .rank-3 .card-bar-fill { background: linear-gradient(90deg, #a07040, #c89060); }
+
+    .card-traits { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .trait-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(184,114,10,0.12);
+      color: var(--parchment);
+    }
+
+    .trait-pill span.icon { font-size: 11px; }
+
+    .card-chars {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: var(--dust);
+      line-height: 1.55;
+      padding-top: 10px;
+      border-top: 1px solid rgba(184,114,10,0.08);
+      display: none;
+    }
+
+    .pred-card.rank-1 .card-chars { display: block; }
+
+    .card-toggle {
+      margin-top: 8px;
+      font-size: 0.7rem;
+      color: var(--amber);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      padding: 0;
+      transition: var(--transition);
+    }
+
+    .card-toggle:hover { color: var(--gold); }
+    .card-toggle svg { width: 12px; height: 12px; stroke: currentColor; transition: transform 0.25s; }
+    .pred-card.open .card-toggle svg { transform: rotate(180deg); }
+    .pred-card.open .card-chars { display: block; }
+
+    /* ── Footer ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 28px;
+      border-top: 1px solid rgba(184,114,10,0.12);
+      font-size: 0.8rem;
+      color: rgba(122,98,72,0.55);
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Keyframes ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(8px); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+      40%            { transform: scale(1);   opacity: 1; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 720px) {
+      .navbar { padding: 0 20px; }
+      main { padding: 40px 16px 80px; }
+      .upload-card { padding: 24px 18px; }
+      .result-shell { grid-template-columns: 1fr; }
+      .result-img-col img { min-height: 220px; max-height: 260px; }
+      .result-preds-col { border-left: none; border-top: 1px solid rgba(184,114,10,0.10); }
+    }
+  </style>
 </head>
 
 <body>
 
+<!-- ── Navbar ── -->
 <header class="navbar">
-  <div class="logo">
-    <div class="cube"></div>
-    <span>DL Cattle Classifier</span>
-  </div>
+  <a href="/index" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 32 32" fill="none">
+        <rect x="2"  y="2"  width="12" height="12" rx="3" fill="#c8860e"/>
+        <rect x="18" y="2"  width="12" height="12" rx="3" fill="#4a7c45"/>
+        <rect x="2"  y="18" width="12" height="12" rx="3" fill="#4a7c45"/>
+        <rect x="18" y="18" width="12" height="12" rx="3" fill="#c8860e"/>
+      </svg>
+    </div>
+    <span>Breed<em>Scanner</em></span>
+  </a>
   <nav>
-    <a href="/index">Home</a>
+    <a href="/index" class="active">Home</a>
     <a href="/about">About</a>
     <a href="/feedback">Feedback</a>
     <a href="/logout">Logout</a>
   </nav>
 </header>
 
-<main class="content">
-  <section class="upload-section">
-    <h1>Upload an Image or Paste Image URL</h1>
 
+<!-- ── Main ── -->
+<main>
+
+  <div class="hero">
+    <div class="hero-badge">AI-Powered · EfficientNet-B4</div>
+    <h1>Identify Cattle &amp; Buffalo<br><span>Breeds Instantly</span></h1>
+    <p>Upload a photo or paste an image URL — results in seconds</p>
+  </div>
+
+  <div class="upload-card">
+
+    <!-- ══════════════════════════════════════════
+         FORM — only inputs + Analyze btn inside.
+         No reset button here to avoid any nesting.
+    ══════════════════════════════════════════ -->
     <form id="frm" enctype="multipart/form-data">
-      <div class="form-group">
-        <label class="file-label">
-          <input type="file" name="image" accept="image/*">
-          Choose File
-        </label>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="dropZone">
+        <input type="file" name="image" id="fileInput" accept="image/*">
+        <div class="drop-icon">
+          <svg fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <p><strong>Drop image here</strong></p>
+        <p>or click to browse</p>
+        <span id="file-label"></span>
       </div>
 
-      <div class="form-group">
-        <input type="url" name="image_url" placeholder="or paste an image URL (https://...)">
+      <!-- OR divider -->
+      <div class="divider-or">OR</div>
+
+      <!-- ══════════════════════════════════════
+           URL INPUT — just a label + input.
+           Icon lives as a CSS background-image
+           on the <input> itself. Zero wrappers,
+           zero extra elements, zero nesting.
+      ══════════════════════════════════════ -->
+      <div class="url-block">
+        <label class="url-block-label" for="urlInput">Paste image URL</label>
+        <input
+          class="url-input"
+          type="url"
+          name="image_url"
+          id="urlInput"
+          placeholder="https://example.com/cattle.jpg"
+        >
       </div>
 
-      <button type="submit" class="btn-primary">Analyze Breed</button>
+      <!-- Analyze — only submit button in form -->
+      <button type="submit" id="analyzeBtn" class="analyze-btn">
+        <span class="btn-inner">
+          <span class="spinner"></span>
+          <span class="btn-text">Analyze Breed</span>
+        </span>
+      </button>
+
     </form>
-  </section>
 
-  <section id="result" class="result-card hidden"></section>
+    <!-- ══════════════════════════════════════
+         RESET — lives outside <form> entirely.
+         Can never be nested inside any button.
+    ══════════════════════════════════════ -->
+    <div class="reset-row">
+      <button type="button" id="resetBtn" class="reset-btn" title="Clear everything and start over">
+        <svg fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+        </svg>
+        Reset all
+      </button>
+    </div>
+
+  </div><!-- /.upload-card -->
+
+  <section id="result"></section>
+
 </main>
 
 <footer>
-  <p>© 2025 DL Cattle Classifier | Powered by Flask & PyTorch (ResNet-50)</p>
+  <p>BreedScanner &nbsp;·&nbsp; DL Cattle &amp; Buffalo Classifier</p>
 </footer>
 
+
 <script>
-document.getElementById('frm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+  const fileInput = document.getElementById('fileInput');
+  const fileLabel = document.getElementById('file-label');
+  const urlInput  = document.getElementById('urlInput');
+  const resetBtn  = document.getElementById('resetBtn');
+  const resultSec = document.getElementById('result');
+  const dz        = document.getElementById('dropZone');
 
-  const fd = new FormData(e.target);
-  const result = document.getElementById('result');
+  // ── File label ──
+  fileInput.addEventListener('change', function () {
+    fileLabel.textContent = this.files[0] ? this.files[0].name : '';
+  });
 
-  result.classList.remove('hidden');
-  result.innerHTML = "<p>🔍 Running deep learning model…</p>";
+  // ── Drag-over ──
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',      () => dz.classList.remove('drag-over'));
 
-  const res = await fetch("/predict", { method: "POST", body: fd });
-  const j = await res.json();
+  // ════════════════════════════════════════════
+  // RESET — clears file + URL + results
+  // ════════════════════════════════════════════
+  resetBtn.addEventListener('click', function () {
+    // 1. Clear file input & label
+    fileInput.value = '';
+    fileLabel.textContent = '';
+    dz.classList.remove('drag-over');
 
-  if (res.ok) {
-    result.innerHTML = `
-      <h2>Analysis Results</h2>
-      <div class="analysis-container">
-        <div class="image-box">
-          <img src="${j.image_path || '#'}" alt="Uploaded Image">
-        </div>
-        <div class="details-box">
-          <div class="status-tag">🟢 Animal Detected</div>
-          <h3>Deep Learning Prediction</h3>
-          <p><b>Breed:</b> ${j.predicted}</p>
-          <p><b>Confidence:</b></p>
-          <div class="progress-bar">
-            <div class="progress" style="width:${(j.probability * 100).toFixed(1)}%"></div>
-          </div>
-          <p class="confidence-text">${(j.probability * 100).toFixed(1)}%</p>
-          <p class="remark">Prediction generated using ResNet-50 feature extraction and classification.</p>
-        </div>
-      </div>
-    `;
-  } else {
-    result.innerHTML = `<p class="error">❌ Error: ${j.error || "Something went wrong."}</p>`;
+    // 2. Clear URL
+    urlInput.value = '';
+
+    // 3. Fade out & wipe results
+    if (resultSec.innerHTML.trim() !== '') {
+      resultSec.style.animation = 'fadeOut 0.28s ease forwards';
+      setTimeout(() => {
+        resultSec.innerHTML = '';
+        resultSec.style.animation = '';
+      }, 290);
+    }
+
+    // 4. Spin icon feedback
+    resetBtn.classList.add('spinning');
+    setTimeout(() => resetBtn.classList.remove('spinning'), 560);
+  });
+
+  // ── Animate confidence bars ──
+  function animateBars() {
+    document.querySelectorAll('.card-bar-fill[data-pct]').forEach(bar => {
+      requestAnimationFrame(() => { bar.style.width = bar.dataset.pct + '%'; });
+    });
   }
-});
+
+  // ── Toggle card details ──
+  function initToggles() {
+    document.querySelectorAll('.card-toggle').forEach(btn => {
+      btn.addEventListener('click', () => btn.closest('.pred-card').classList.toggle('open'));
+    });
+  }
+
+  // ── Form submit ──
+  document.getElementById('frm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const fd  = new FormData(e.target);
+    const btn = document.getElementById('analyzeBtn');
+
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn.querySelector('.btn-text').textContent = 'Analyzing…';
+
+    resultSec.innerHTML = `
+      <div class="analyzing-state show">
+        <div class="analyzing-dots"><span></span><span></span><span></span></div>
+        <p style="color:var(--dust);font-size:.85rem;">Running model…</p>
+      </div>`;
+
+    const res = await fetch('/predict', { method: 'POST', body: fd });
+    const j   = await res.json();
+
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.querySelector('.btn-text').textContent = 'Analyze Breed';
+
+    if (!res.ok || !j.predictions) {
+      resultSec.innerHTML = `
+        <div style="text-align:center;padding:32px;color:#b03030;">
+          <p style="font-size:1rem;">${j.error || 'No cattle detected in this image.'}</p>
+        </div>`;
+      return;
+    }
+
+    const preds = j.predictions;
+
+    const cardsHTML = preds.map((p, i) => {
+      const rankClass = `rank-${i + 1}`;
+      const isTop     = i === 0;
+      return `
+        <div class="pred-card ${rankClass}${isTop ? ' open' : ''}">
+          <div class="card-top">
+            <div class="card-left">
+              <div class="rank-badge">${i + 1}</div>
+              <div class="card-breed">${p.breed}</div>
+            </div>
+            <div class="card-conf-pct">${p.probability}%</div>
+          </div>
+          <div class="card-bar-track">
+            <div class="card-bar-fill" data-pct="${p.probability}"></div>
+          </div>
+          <div class="card-traits">
+            <span class="trait-pill"><span class="icon">🌍</span>${p.origin}</span>
+            <span class="trait-pill"><span class="icon">🥛</span>${p.milk_yield}</span>
+            <span class="trait-pill"><span class="icon">🎨</span>${p.color}</span>
+          </div>
+          <div class="card-chars">${p.characteristics}</div>
+          <button class="card-toggle">
+            <svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+            ${isTop ? 'Hide' : 'Show'} details
+          </button>
+        </div>`;
+    }).join('');
+
+    resultSec.innerHTML = `
+      <div class="result-panel">
+        <div class="result-shell">
+          <div class="result-img-col">
+            <img src="${j.image_path}" alt="Uploaded cattle image">
+            <div class="result-img-badge">
+              Analysis Complete · ${preds.length} result${preds.length > 1 ? 's' : ''}
+            </div>
+          </div>
+          <div class="result-preds-col">
+            <div class="preds-header">
+              <div class="preds-title">Breed Analysis</div>
+            </div>
+            <div class="pred-stack">${cardsHTML}</div>
+          </div>
+        </div>
+      </div>`;
+
+    animateBars();
+    initToggles();
+  });
 </script>
 
 </body>

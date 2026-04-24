@@ -21,46 +21,95 @@
   <h1>Model Feedback</h1>
 
   {% if submitted %}
-    <div class="alert success">✅ Thank you for your feedback! It helps us improve.</div>
+    <div class="alert success">
+      ✅ Thank you for your feedback! It helps us improve.
+    </div>
   {% endif %}
 
   <form method="post" class="feedback-form">
+
+    <!-- Image -->
     <div class="form-group">
       <label>Image filename or URL</label>
-      <input type="text" name="image" placeholder="Enter image filename or URL" required>
+      <input type="text" name="image"
+             placeholder="Enter image filename or URL" required>
     </div>
 
+    <!-- Predicted Label -->
     <div class="form-group">
       <label>Predicted Label</label>
-      <input type="text" name="predicted" placeholder="Model predicted label" required>
+      <input type="text" name="predicted"
+             placeholder="Model predicted label" required>
     </div>
 
+    <!-- Was it correct -->
     <div class="form-group">
-      <label>Was it correct?</label>
-      <select name="correct" required>
+      <label>Was the prediction correct?</label>
+      <select name="correct" id="correctSelect" required>
         <option value="">--Select--</option>
         <option value="yes">Yes</option>
         <option value="no">No</option>
       </select>
     </div>
 
-    <div class="form-group">
-      <label>Actual Label (if incorrect)</label>
-      <input type="text" name="user_label" placeholder="Enter the correct label">
+    <!-- Actual Label (Hidden by default) -->
+    <div class="form-group hidden" id="actualLabelBox">
+      <label>Actual Correct Label</label>
+      <input type="text" name="actual_label"
+             placeholder="Enter the correct breed name">
     </div>
 
+    <!-- Rating -->
+    <div class="form-group">
+      <label>Rate Prediction Accuracy</label>
+      <div class="star-rating">
+        <input type="radio" id="star5" name="rating" value="5">
+        <label for="star5">★</label>
+
+        <input type="radio" id="star4" name="rating" value="4">
+        <label for="star4">★</label>
+
+        <input type="radio" id="star3" name="rating" value="3">
+        <label for="star3">★</label>
+
+        <input type="radio" id="star2" name="rating" value="2">
+        <label for="star2">★</label>
+
+        <input type="radio" id="star1" name="rating" value="1">
+        <label for="star1">★</label>
+      </div>
+    </div>
+
+    <!-- Notes -->
     <div class="form-group">
       <label>Additional Notes</label>
-      <textarea name="notes" rows="4" placeholder="Any additional comments or observations..."></textarea>
+      <textarea name="notes" rows="4"
+        placeholder="Any additional comments or observations..."></textarea>
     </div>
 
+    <!-- Buttons -->
     <button type="submit" class="btn-primary">Submit Feedback</button>
     <a href="/index" class="btn-secondary">Back to Home</a>
+
   </form>
 </div>
 
 <footer>
   <p>© 2025 Cattle Classifier. All rights reserved.</p>
 </footer>
+
+<!-- 🔥 JavaScript for conditional field -->
+<script>
+document.getElementById("correctSelect").addEventListener("change", function() {
+  const box = document.getElementById("actualLabelBox");
+
+  if (this.value === "no") {
+    box.classList.remove("hidden");
+  } else {
+    box.classList.add("hidden");
+  }
+});
+</script>
+
 </body>
 </html>

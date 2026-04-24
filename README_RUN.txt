@@ -8,7 +8,7 @@ pip install -r requirements.txt
 python dataset/prepare_split.py
 
 # Train ResNet-50
-python src/train_dl.py --data dataset/split --out models/resnet50_checkpoint.pth --epochs 8 --batch 32 --lr 1e-4
+python src/train_dl.py --data dataset/split --out models/resnet50_checkpoint.pth --epochs 30 --batch 16 --lr 3e-4
 
 # Run DL web app
 python src/app_dl.py 
@@ -17,8 +17,9 @@ python src/app_dl.py
 
 
 while re running the program
-venv\Scripts\activate.bat
-pip install -r requirements.txt
+--venv\Scripts\activate.bat
+conda activate cattle_dl
+--pip install -r requirements.txt
 python -m src.app_dl
 
 

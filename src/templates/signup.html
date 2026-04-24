@@ -16,7 +16,7 @@
       <a href="/feedback">Feedback</a>
       <a href="/logout">Logout</a>
     {% else %}
-      <a href="/login">Login</a>
+      <a href="{{ url_for('login') }}">Login</a>
     {% endif %}
   </div>
 </nav>
@@ -48,7 +48,7 @@
   </form>
 
   <p class="switch-link">
-    Already have an account? <a href="/login">Login here</a>
+    Already have an account? <a href="{{ url_for('login') }}">Login here</a>
   </p>
 </div>
 
